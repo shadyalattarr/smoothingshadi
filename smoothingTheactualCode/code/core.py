@@ -21,7 +21,7 @@ class Smooth(object):
         self.num_classes = num_classes
         self.sigma = sigma
 
-    def certify(self, x: torch.tensor, n0: int, n: int, alpha: float, batch_size: int) -> (int, float):
+    def certify(self, x: torch.tensor, n0: int, n: int, alpha: float, batch_size: int) -> tuple[int, float]:
         """ Monte Carlo algorithm for certifying that g's prediction around x is constant within some L2 radius.
         With probability at least 1 - alpha, the class returned by this method will equal g(x), and g's prediction will
         robust within a L2 ball of radius R around x.
