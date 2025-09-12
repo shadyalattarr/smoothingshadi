@@ -57,21 +57,21 @@ class Smooth(object):
         This function uses the hypothesis test described in https://arxiv.org/abs/1610.03944
         for identifying the top category of a multinomial distribution.
 
-        :param x: the input [channel x height x width]
-        :param n: the number of Monte Carlo samples to use
-        :param alpha: the failure probability
+        :param x: the input [channel x height x width] - input image
+        :param n: the number of Monte Carlo samples to use - # noisy samples to draw
+        :param alpha: the failure probability - we accept a Type 1 error (false negative) every alpha
         :param batch_size: batch size to use when evaluating the base classifier
         :return: the predicted class, or ABSTAIN
         """
         self.base_classifier.eval()
-        counts = self._sample_noise(x, n, batch_size)
+        counts = self._sample_noise(x, n, batch_size) 
         top2 = counts.argsort()[::-1][:2]
         count1 = counts[top2[0]]
         count2 = counts[top2[1]]
-        if binomtest(count1, count1 + count2, p=0.5).pvalue > alpha:
-            return Smooth.ABSTAIN
+        if binomtest(count1, count1 + count2, p=0.5).pvalue > alpha: #p-val is how much we accept the null hypothesis
+            return Smooth.ABSTAIN # if p > alpha -- accept null hyp > our error acceptance --> null hyp likely true -- fail to reject null hyp abstain
         else:
-            return top2[0]
+            return top2[0] # smooth classifier concludes with high confidence A is truly the majority vote
 
     def _sample_noise(self, x: torch.tensor, num: int, batch_size) -> np.ndarray:
         """ Sample the base classifier's prediction under noisy corruptions of the input x.
@@ -88,8 +88,8 @@ class Smooth(object):
                 num -= this_batch_size
 
                 batch = x.repeat((this_batch_size, 1, 1, 1))
-                noise = torch.randn_like(batch, device='cuda') * self.sigma
-                predictions = self.base_classifier(batch + noise).argmax(1)
+                noise = torch.randn_like(batch, device='cuda') * self.sigma # the RANDOM noise generation
+                predictions = self.base_classifier(batch + noise).argmax(1)# Perturbation  # predict by taking the noisy input to base classifier
                 counts += self._count_arr(predictions.cpu().numpy(), self.num_classes)
             return counts
 
